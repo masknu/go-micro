@@ -4,36 +4,27 @@ package runtime
 import (
 	"errors"
 	"time"
-
-	"github.com/micro/go-micro/v3/util/kubernetes/client"
 )
 
 var (
-	ErrAlreadyExists = errors.New("already exists")
+	ErrAlreadyExists   = errors.New("already exists")
+	ErrInvalidResource = errors.New("invalid resource")
 )
 
 // Runtime is a service runtime manager
 type Runtime interface {
 	// Init initializes runtime
 	Init(...Option) error
-	// CreateNamespace creates a new namespace in the runtime
-	CreateNamespace(string) error
-	// DeleteNamespace deletes a namespace in the runtime
-	DeleteNamespace(string) error
-	// CreateResource creates a runtime resource
-	CreateResource(*client.Resource, ...client.CreateOption) error
-	// DeleteResource deletes a runtime resource
-	DeleteResource(*client.Resource, ...client.DeleteOption) error
-	// Create registers a service
-	Create(*Service, ...CreateOption) error
-	// Read returns the service
+	// Create a resource
+	Create(Resource, ...CreateOption) error
+	// Read a resource
 	Read(...ReadOption) ([]*Service, error)
-	// Update the service in place
-	Update(*Service, ...UpdateOption) error
-	// Remove a service
-	Delete(*Service, ...DeleteOption) error
-	// Logs returns the logs for a service
-	Logs(*Service, ...LogsOption) (Logs, error)
+	// Update a resource
+	Update(Resource, ...UpdateOption) error
+	// Delete a resource
+	Delete(Resource, ...DeleteOption) error
+	// Logs returns the logs for a resource
+	Logs(Resource, ...LogsOption) (Logs, error)
 	// Start starts the runtime
 	Start() error
 	// Stop shuts down the runtime
@@ -126,7 +117,21 @@ const (
 	Error
 )
 
-// Service is runtime service
+type Namespace struct {
+	// Name of the namespace
+	Name string
+}
+
+type NetworkPolicy struct {
+	// The labels allowed ingress by this policy
+	AllowedLabels map[string]string
+	// Name of the namespace
+	Name string
+	// Namespace the network policy belongs to
+	Namespace string
+}
+
+// Service is runtime resource
 type Service struct {
 	// Name of the service
 	Name string
@@ -138,6 +143,13 @@ type Service struct {
 	Metadata map[string]string
 	// Status of the service
 	Status ServiceStatus
+}
+
+// Resource represents any resource handled by runtime
+type Resource struct {
+	Namespace     *Namespace
+	NetworkPolicy *NetworkPolicy
+	Service       *Service
 }
 
 // Resources which are allocated to a serivce
